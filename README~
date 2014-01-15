@@ -1,0 +1,105 @@
+rtl_hpsdr is an RTL to HPSDR software translation server.
+
+It currently builds and runs on Linux. It identifies and uses up to
+seven (theoretically eight) USB RTL2832U-based DVB-T dongles. The
+dongles can be set up with an up converter or use RTL direct-mode
+for HF receive. Or direct input to provide it's native > HF receive
+range.
+
+The program can be passed in a variety of command line options.
+One of which is a frequency offset not only for up converter use
+but also to allow a full range of frequency options to HPSDR programs
+that are coded to only allow the real HPSDR radio's (i.e. Hermes)
+frequency range which is from 10KHz to 55MHz.
+
+The main purpose of this program is to provide a mechanism that
+allows RTL Dongle owners the ability to use them on HPSDR specific
+software programs.
+
+One such program, cuSDR64 has the ability to control and display
+up to 7 rcvr slices simultaneously. With rtl_hpsdr, if your host
+has the horsepower, you can run 7 RTL Dongles to emulate the HPSDR
+rcvr. cuSDR64 also can be built and run on Linux.
+
+Since the real HPSDR (i.e. Hermes) rcvr can do up to eight rcvr
+slices, there is a concept of 'COPY' rcvrs in this server. This
+would allow one to use HPSDR programs that expected more rcvrs
+than were attached. Currently if a program request more rcvrs
+than are actually attached the rtl_hpsdr server will make copies
+of the last 'real' rcvr. This alows one to only have one RTL dongle
+attached and run PowerSDR mRX which may expect up to four rcvr
+slices.
+
+Refer to: http://openhpsdr.org/softwareinfo.php  for a list of
+HPSDR supported applications.
+
+I have tested this only on cuSDR64, cuSDR32, and PowerSDR mRX.
+
+I was succeccful running 7 RTL dongles simultaneously on a
+Quad core ARM Cortex A9 based mini-pc, model EKB311
+running a version of Picuntu, http://ubuntu.g8.net/
+
+Useful documentation:
+http://openhpsdr.org/support/Ozy/USB_protocol_V1.48.pdf
+http://svn.tapr.org/repos_sdr_hpsdr/trunk/Metis/Documentation/Metis-%20How%20it%20works_V1.30.pdf
+
+Feel free to fix / add / modify this program.
+I'd appreciate keeping me updated, n1gp@hotmail.com
+
+
+1. Dependencies
+
+- At least one (and up to seven) RTL2832U-based DVB-T dongles
+- RTL-SDR from http://cgit.osmocom.org/cgit/rtl-sdr/
+
+
+2. Installation
+
+Get the latest code from: https://github.com/n1gp/rtl_hpsdr
+
+The Makefile is setup to detect the CPU NEON or SSE2
+SIMD capabilities. If none are found it will compile
+without optimizations for the downsampling routines.
+
+$ make
+
+3. Usage
+
+rtl_hpsdr can be started using command line options or with a
+confuration file. See rtl_hpsdr.conf for an example.
+
+$ ./rtl_hpsdr -c rtl_hpsdr.conf
+
+For help
+
+$ ./rtl_hpsdr -h
+
+4. Known problems
+
+- This server program needs to be run on a separate PC than
+  the client program. Probably due to improper network settings
+  in the reveal and discovery socket layers or perhaps its not
+  possible to connect from the same client port to the same
+  server (address and port).
+
+- Periodically the Alsa local sound skips and is caused by xruns.
+  Possibly due to improper period and buffer settings.
+
+- The down sampling routines have not been validated for accuracy
+  and perhaps could be better optimized.
+
+5. Credits and License
+
+rtl_hpsdr is designed and written by Richard Koch N1GP,
+and is licensed under the GNU General Public License.
+
+I give thanks and credit to the http://openhpsdr.org community.
+The work of John Melton, G0ORX/N6LYT and others on
+the ghpsdr3 open source projects which provided many examples
+for communicating with HPSDR. Some alsa audio routines
+I borrowed from Matthieu Sozeau and the XMMS project. Also
+Olli Parviainen and his application SoundTouch where I got idea's
+on optimizing the downsampling filter routines using SIMD
+instructions, http://www.surina.net/soundtouch
+
+

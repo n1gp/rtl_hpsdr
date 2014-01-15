@@ -1,0 +1,22 @@
+Add support to build and run this on Windows.
+
+Fix / add the ability to run this server locally on the
+same PC that runs the HPSDR client program. Not sure
+if its possible to connect from the same client port to
+the same server (address and port).
+
+The Alsa local sound routines may need some work. Every now
+and then the audio skips and is caused by xruns.
+
+Validate and perhaps better optimize the down sampling routines.
+
+It may be useful to stagger multiple 'real' RTL rcvrs when making
+'copy' rcvrs instead of just making multiple copies of the last.
+
+Maybe do something with the Wideband view?
+
+Add preamp and attenuator functionality?
+
+No testing has been done on this program's behavior with other
+HPSDR equipment in the network.
+
