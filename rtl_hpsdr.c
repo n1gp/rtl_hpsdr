@@ -788,7 +788,9 @@ init_rtl(int dev_index) {
 	} else
 		printf("  tuner gain\t\t%s\n", (mcb.gain[dev_index]) ? num : "auto");
 
-	rtlsdr_set_center_freq(rtldev, 1000000000);
+	rtlsdr_set_center_freq(rtldev, 100000000);
+	if(r < 0)
+		printf("WARNING: Failed to set tuner freq to 100000000hz!\n");
 
 	r = rtlsdr_set_direct_sampling(rtldev, mcb.direct_mode[dev_index]);
 
