@@ -788,6 +788,8 @@ init_rtl(int dev_index) {
 	} else
 		printf("  tuner gain\t\t%s\n", (mcb.gain[dev_index]) ? num : "auto");
 
+	rtlsdr_set_center_freq(rtldev, 1000000000);
+
 	r = rtlsdr_set_direct_sampling(rtldev, mcb.direct_mode[dev_index]);
 
 	if(r < 0) {
