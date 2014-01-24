@@ -94,6 +94,7 @@ rtl_hpsdr is designed and written by Richard Koch N1GP,
 and is licensed under the GNU General Public License.
 
 I give thanks and credit to the http://openhpsdr.org community.
+All the folks who made the rtl-sdr libraries and utilities.
 The work of John Melton, G0ORX/N6LYT and others on
 the ghpsdr3 open source projects which provided many examples
 for communicating with HPSDR. Some alsa audio routines
