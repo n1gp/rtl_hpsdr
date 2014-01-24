@@ -824,12 +824,14 @@ usage(char* progname) {
 	printf(
 	  "\n%s, an HPSDR Hermes simulator for RTL2832 based DVB-T receivers", progname);
 	printf(
-	  "\n\nUsage:\n" "\tPer rcvr options (comma separated i.e. 1,0,1,1):\n"
+	  "\nSee rtl_hpsdr.conf for configuration option descriptions.\n"
+	  "\nUsage:\n" "\tPer rcvr options (comma separated i.e. 1,0,1,1):\n"
 	  "\t[-a internal agc of the rtl2832 0|1 (defaults 0 or off)]\n"
 	  "\t[-d direct sampling mode 0|1|2 (defaults 0 or off, 1=I 2=Q)]\n"
 	  "\t[-f freq offset in hz (defaults 0)]\n"
 	  "\t[-g gain in tenths of a db (defaults 0 for auto)]\n"
-	  "\t[-m signal multiplier (default 1)]\n\n"
+	  "\t[-m signal multiplier (default 1)]\n"
+	  "\t[-o rcvr order (defaults to 1 - number detected)]\n\n"
 	  "\tGlobal options:\n"
 	  "\t[-c path to config file (overrides these options)]\n"
 	  "\t[-h help (prints this usage)]\n"
