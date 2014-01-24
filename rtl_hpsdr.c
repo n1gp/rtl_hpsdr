@@ -753,19 +753,19 @@ rtl_read_thr_func(void* arg) {
 }
 
 int
-init_rtl(int dev_index) {
+init_rtl(int rcvr_num, int dev_index) {
 	int r;
 	char num[16];
 	rtlsdr_dev_t* rtldev;
 
-	r = rtlsdr_open(&(mcb.rcb[dev_index].rtldev), dev_index);
+	r = rtlsdr_open(&(mcb.rcb[rcvr_num].rtldev), dev_index);
 
 	if(r < 0) {
 		printf("Failed to open rtlsdr device\n");
 		return (-1);
 	}
 
-	rtldev = mcb.rcb[dev_index].rtldev;
+	rtldev = mcb.rcb[rcvr_num].rtldev;
 
 	r = rtlsdr_set_sample_rate(rtldev, RTL_SAMPLE_RATE);
 
@@ -774,11 +774,11 @@ init_rtl(int dev_index) {
 		return (-1);
 	}
 
-	sprintf(num, "%d", mcb.gain[dev_index]);
+	sprintf(num, "%d", mcb.gain[rcvr_num]);
 
-	if(mcb.gain[dev_index]) {
+	if(mcb.gain[rcvr_num]) {
 		r = rtlsdr_set_tuner_gain_mode(rtldev, 1);
-		r |= rtlsdr_set_tuner_gain(rtldev, mcb.gain[dev_index]);
+		r |= rtlsdr_set_tuner_gain(rtldev, mcb.gain[rcvr_num]);
 	} else
 		r = rtlsdr_set_tuner_gain_mode(rtldev, 0);
 
@@ -786,28 +786,28 @@ init_rtl(int dev_index) {
 		printf("WARNING: Failed to set tuner gain!\n");
 		return (-1);
 	} else
-		printf("  tuner gain\t\t%s\n", (mcb.gain[dev_index]) ? num : "auto");
+		printf("  tuner gain\t\t%s\n", (mcb.gain[rcvr_num]) ? num : "auto");
 
 	rtlsdr_set_center_freq(rtldev, 100000000);
 	if(r < 0)
 		printf("WARNING: Failed to set tuner freq to 100000000hz!\n");
 
-	r = rtlsdr_set_direct_sampling(rtldev, mcb.direct_mode[dev_index]);
+	r = rtlsdr_set_direct_sampling(rtldev, mcb.direct_mode[rcvr_num]);
 
 	if(r < 0) {
 		printf("WARNING: Failed to set direct sampling!\n");
 		return (-1);
 	} else
 		printf("  direct sampling\t%s\n",
-		       (mcb.direct_mode[dev_index]) ? "on" : "off");
+		       (mcb.direct_mode[rcvr_num]) ? "on" : "off");
 
-	r = rtlsdr_set_agc_mode(rtldev, mcb.agc_mode[dev_index]);
+	r = rtlsdr_set_agc_mode(rtldev, mcb.agc_mode[rcvr_num]);
 
 	if(r < 0) {
 		printf("WARNING: Failed to set automatic gain!\n");
 		return (-1);
 	} else
-		printf("  agc mode\t\t%s\n\n", (mcb.agc_mode[dev_index]) ? "on" : "off");
+		printf("  agc mode\t\t%s\n\n", (mcb.agc_mode[rcvr_num]) ? "on" : "off");
 
 	r = rtlsdr_reset_buffer(rtldev);
 
@@ -897,6 +897,8 @@ parse_config(char* conf_file) {
 				count = set_option(mcb.agc_mode, value);
 			} else if(!strcmp("signal_multiplier", option)) {
 				count = set_option(mcb.signal_multiplier, value);
+			} else if(!strcmp("rcvr_order", option)) {
+				count = set_option(mcb.rcvr_order, value);
 			} else if(!strcmp("sound_dev", option)) {
 				strcpy(mcb.sound_dev, value);
 			} else if(!strcmp("length_fir", option)) {
@@ -936,11 +938,12 @@ main(int argc, char* argv[]) {
 		mcb.gain[i] = 0;
 		mcb.freq_offset[i] = 0;
 		mcb.signal_multiplier[i] = 1;
+		mcb.rcvr_order[i] = i;
 		copy_rcvr[i] = -1;
 		memset(&mcb.freq_ltime[i], 0, sizeof(mcb.freq_ltime[i]));
 	}
 
-	while(loop && ((opt = getopt(argc, argv, "c:a:d:f:g:hm:n:r:s:v")) != -1)) {
+	while(loop && ((opt = getopt(argc, argv, "c:a:d:f:g:hm:n:o:r:s:v")) != -1)) {
 		switch(opt) {
 		case 'a':
 			r = set_option(mcb.agc_mode, optarg);
@@ -980,6 +983,10 @@ main(int argc, char* argv[]) {
 
 		case 'n':
 			strcpy(mcb.net_dev, optarg);
+			break;
+
+		case 'o':
+			r = set_option(mcb.rcvr_order, optarg);
 			break;
 
 		case 'r':
@@ -1126,11 +1133,11 @@ main(int argc, char* argv[]) {
 
 	for(i = 0; i < mcb.total_num_rcvrs; i++) {
 		mcb.rcb[i].mcb = &mcb;
-		printf("\nRcvr %d settings...\n", i + 1);
+		printf("\nRcvr %d (ordered as %d) settings...\n", i + 1, mcb.rcvr_order[i] + 1);
 		printf("  freq offset\t\t%d hz\n", mcb.freq_offset[i]);
 		printf("  signal multiplier\t%d\n", mcb.signal_multiplier[i]);
 
-		if(0 != init_rtl(i)) {
+		if(0 != init_rtl(i, mcb.rcvr_order[i])) {
 			printf("ERROR: Failed init_rtl rcvr%d hardware!\n", i + 1);
 			return (-1);
 		}
@@ -1144,8 +1151,7 @@ main(int argc, char* argv[]) {
 		                    ((RTL_READ_COUNT / 2) + (mcb.length_fir * 2)) * sizeof(float));
 
 		if(r != 0) {
-			printf("failed to allocate iq_buf aligned memory: r=%d\n",
-			       r);
+			printf("failed to allocate iq_buf aligned memory: r=%d\n", r);
 			return (r);
 		}
 

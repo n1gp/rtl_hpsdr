@@ -50,7 +50,7 @@
 #include <xmmintrin.h>
 #endif
 
-#define PRG_VERSION "1.0" // see ChangeLog for history
+#define PRG_VERSION "1.1" // see ChangeLog for history
 
 #define HERMES_FW_VER 24    //2.4
 #define PORT 1024
@@ -96,6 +96,7 @@ struct main_cb {
 	int direct_mode[MAX_RCVRS + 1];
 	int gain[MAX_RCVRS + 1];
 	int freq_offset[MAX_RCVRS + 1];
+	int rcvr_order[MAX_RCVRS + 1];
 	int signal_multiplier[MAX_RCVRS + 1];
 
 	struct timeb freq_ltime[MAX_RCVRS];
@@ -136,7 +137,7 @@ struct main_cb {
 
 void downsample(struct rcvr_cb* rcb);
 void format_payload(void);
-int init_rtl(int dev_index);
+int init_rtl(int rcvr_num, int dev_index);
 void load_packet(struct rcvr_cb* rcb);
 void rtl_sighandler(int signum);
 int get_addr(int sock, char* ifname);
