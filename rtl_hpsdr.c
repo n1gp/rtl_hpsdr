@@ -940,7 +940,7 @@ main(int argc, char* argv[]) {
 		mcb.gain[i] = 0;
 		mcb.freq_offset[i] = 0;
 		mcb.signal_multiplier[i] = 1;
-		mcb.rcvr_order[i] = i;
+		mcb.rcvr_order[i] = i + 1;
 		copy_rcvr[i] = -1;
 		memset(&mcb.freq_ltime[i], 0, sizeof(mcb.freq_ltime[i]));
 	}
@@ -1135,11 +1135,11 @@ main(int argc, char* argv[]) {
 
 	for(i = 0; i < mcb.total_num_rcvrs; i++) {
 		mcb.rcb[i].mcb = &mcb;
-		printf("\nRcvr %d (ordered as %d) settings...\n", i + 1, mcb.rcvr_order[i] + 1);
+		printf("\nRcvr %d (ordered as %d) settings...\n", i + 1, mcb.rcvr_order[i]);
 		printf("  freq offset\t\t%d hz\n", mcb.freq_offset[i]);
 		printf("  signal multiplier\t%d\n", mcb.signal_multiplier[i]);
 
-		if(0 != init_rtl(i, mcb.rcvr_order[i])) {
+		if(0 != init_rtl(i, mcb.rcvr_order[i] - 1)) {
 			printf("ERROR: Failed init_rtl rcvr%d hardware!\n", i + 1);
 			return (-1);
 		}
