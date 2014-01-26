@@ -1,8 +1,15 @@
+2014-01-26  Richard Koch  <n1gp@hotmail.com>
+
+* 1.2,	Added support for CW SkimSrv: http://dxatlas.com/SkimServer/
+	This uses Vasiliy K3IT HermesIntf.dll which he modified
+	for rtl_hpsdr so it can use up to 8 dongles to cover 8 bands.
+	Get that here: http://sourceforge.net/projects/hermesintf/files/
+
 2014-01-24  Richard Koch  <n1gp@hotmail.com>
 
-* 1.1, Added rcvr_order
+* 1.1,	Added rcvr_order
 
 2014-01-13  Richard Koch  <n1gp@hotmail.com>
 
-* 1.0, Initial release
+* 1.0,	Initial release
 
