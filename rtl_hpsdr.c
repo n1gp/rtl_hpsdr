@@ -114,9 +114,11 @@ void
 hpsdrsim_reveal(void) {
 	int rc, bytes_read;
 	int i, on = 1;
-	u_char init_buffer[12] =
-	{ 0xEF, 0xFE, 2 + running, 0, 0, 0, 0, 0, 0, HERMES_FW_VER, 1, 1 };
+	u_char init_buffer[18] =
+	{ 0xEF, 0xFE, 2 + running, 0, 0, 0, 0, 0, 0, HERMES_FW_VER,
+	  'R', 'T', 'L', '_', 'N', '1', 'G', 'P' }; // special ID for SkimSrv
 	char s_ip[16];
+	bool ready = false;
 
 	printf("Revealing myself as a Hermes rcvr.\n");
 
@@ -124,6 +126,13 @@ hpsdrsim_reveal(void) {
 
 	if(reveal_socket < 0) {
 		perror("create socket failed for reveal_socket\n");
+		exit(1);
+	}
+
+	rc = setsockopt(reveal_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+
+	if(rc != 0) {
+		printf("cannot set SO_REUSEADDR: rc=%d\n", rc);
 		exit(1);
 	}
 
@@ -147,24 +156,16 @@ hpsdrsim_reveal(void) {
 	for(i = 0; i < 6; i++)
 		init_buffer[3 + i] = hw_address[i];
 
+	// bind to this interface
 	my_addr.sin_family = AF_INET;
-	my_addr.sin_port = htons(REVEAL_SEND_PORT);
-	my_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-	memset(&(my_addr.sin_zero), '\0', 8);
-
-	rc = setsockopt(reveal_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-
-	if(rc != 0) {
-		printf("cannot set SO_REUSEADDR: rc=%d\n", rc);
-		exit(1);
-	}
+	my_addr.sin_port = htons(PORT);
+	my_addr.sin_addr.s_addr = INADDR_ANY;
 
 	if(bind(reveal_socket, (struct sockaddr*) &my_addr, sizeof(my_addr)) < 0) {
-		perror("bind socket failed for reveal_socket");
+		perror("1 bind socket failed for reveal_socket");
 		exit(1);
 	}
 
-#if 0
 	// allow broadcast on the socket
 	rc = setsockopt(reveal_socket, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on));
 
@@ -173,33 +174,41 @@ hpsdrsim_reveal(void) {
 		exit(1);
 	}
 
-#endif
-
 	their_length = sizeof(their_addr);
 
+	memset(&their_addr, 0, their_length);
+	their_addr.sin_family = AF_INET;
+	their_addr.sin_port = htons(PORT);
+	their_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+
 	// Get discovered
-	while(!revealed) {
+	while(!ready) {
 		if((bytes_read = recvfrom(reveal_socket, buffer, sizeof(buffer), 0,
 		                          (struct sockaddr*) &their_addr, &their_length)) < 0) {
 			if(!do_exit)
 				printf("Bad recvfrom, NOT discovered!");
 
 			exit(0);
-		} else
-			printf("Waiting to be discovered...\n");
+		} //else
+			//printf("Received %d bytes, waiting to be discovered...\n", bytes_read);
+
+		// the discovery process is complete, continue on
+		if((bytes_read > 1000) && revealed) {
+			ready = true;
+			continue;
+		}
 
 		if(buffer[0] == 0xEF && buffer[1] == 0xFE && buffer[2] == 0x02) {
-			revealed++;
 			strcpy(server_ip_address, inet_ntoa(their_addr.sin_addr));
 			printf("Was discovered by %s\n", server_ip_address);
 
 			// Send acknowledgement of discovery
-			for(i = 0; i < 64; i++) {
-				buffer[i] = 1;
-			}
-
 			for(i = 0; i < sizeof(init_buffer); i++) {
 				buffer[i] = init_buffer[i];
+			}
+
+			for(i = sizeof(init_buffer); i < 60; i++) {
+				buffer[i] = 1;
 			}
 
 			if(sendto(reveal_socket, buffer, 60, 0, (struct sockaddr*) &their_addr,
@@ -208,8 +217,10 @@ hpsdrsim_reveal(void) {
 				exit(1);
 			} else
 				printf("Sent discovery acknowledgement.\n");
+
+			revealed = 1;
 		} else {
-			printf("Was NOT discovered by %s\n", inet_ntoa(their_addr.sin_addr));
+			//printf("Was NOT discovered by %s\n", inet_ntoa(their_addr.sin_addr));
 		}
 	}
 
@@ -221,7 +232,8 @@ hpsdrsim_reveal(void) {
 	my_length = sizeof(my_addr);
 	memset(&my_addr, 0, my_length);
 	my_addr.sin_family = AF_INET;
-	my_addr.sin_port = htons(DATA_PORT);
+	my_addr.sin_port = htons(PORT);
+	my_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	rc = setsockopt(reveal_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
@@ -231,7 +243,7 @@ hpsdrsim_reveal(void) {
 	}
 
 	if(bind(reveal_socket, (struct sockaddr*) &my_addr, my_length) < 0) {
-		perror("bind socket failed for reveal_socket");
+		perror("2 bind socket failed for reveal_socket");
 		exit(1);
 	}
 
@@ -375,12 +387,10 @@ hpsdrsim_thread(void* arg) {
 	u_char C0_1, C0_2;
 
 	//printf("ENTERING hpsdrsim_thread active rcvrs: %d\n", mcb.active_num_rcvrs);
-//    reopen_local_sound();
 
 	// start a watchdog to make sure we are sending frames
-	rc =
-	  pthread_create(&watchdog_thread_id, NULL, hpsdrsim_watchdog_thread,
-	                 NULL);
+	rc = pthread_create(&watchdog_thread_id, NULL,
+		hpsdrsim_watchdog_thread, NULL);
 
 	if(rc != 0) {
 		printf("pthread_create failed on hpsdrsim_watchdog_thread: rc=%d\n",
@@ -389,15 +399,6 @@ hpsdrsim_thread(void* arg) {
 	}
 
 	while(!do_exit) {
-		bytes_read =
-		  recvfrom(reveal_socket, buffer, sizeof(buffer), 0,
-		           (struct sockaddr*) &my_addr, &my_length);
-
-		if(bytes_read < 0) {
-			perror("recvfrom socket failed for hpsdrsim_thread");
-			exit(1);
-		}  //else printf("hpsdrsim_thread, RECV'D %d bytes\n", bytes_read); //1036 cuSDR64, 1032 ghpsdr3
-
 		if(buffer[0] == 0xEF && buffer[1] == 0xFE) {
 			switch(buffer[2]) {
 			case 1:
@@ -571,7 +572,11 @@ hpsdrsim_thread(void* arg) {
 
 				break;
 
-			case 4:     // start / stop command
+			case 2:
+				//ignore
+				break;
+
+			case 4: // start / stop command
 				if(buffer[3] & 1) {
 					printf("Received Start command\n");
 					running = 1;
@@ -591,6 +596,14 @@ hpsdrsim_thread(void* arg) {
 			printf("Received bad header bytes on data port %02X,%02X\n",
 			       buffer[0], buffer[1]);
 		}
+
+		bytes_read = recvfrom(reveal_socket, buffer, sizeof(buffer), 0,
+		           (struct sockaddr*) &my_addr, &my_length);
+
+		if(bytes_read < 0) {
+			perror("recvfrom socket failed for hpsdrsim_thread");
+			exit(1);
+		}  //else printf("hpsdrsim_thread, RECV'D %d bytes\n", bytes_read); //1036 cuSDR64, 1032 ghpsdr3
 	}
 
 	//printf("EXITING hpsdrsim_thread()\n");
@@ -661,7 +674,7 @@ hpsdrsim_watchdog_thread(void* arg) {
 	pthread_cond_broadcast(&iqready_cond);
 	pthread_mutex_unlock(&iqready_lock);
 
-  // set everything back to a 1 rcvr state
+	// set everything back to a 1 rcvr state
 	mcb.rcvrs_mask = 1;
 	mcb.rcb[0].rcvr_mask = 1;
 
@@ -1040,14 +1053,6 @@ main(int argc, char* argv[]) {
 	printf("  hpsdr output rate:\t%d hz\n", mcb.output_rate);
 	printf("  sound device:\t\t%s\n",
 	       (0 == mcb.sound_dev[0]) ? "none" : mcb.sound_dev);
-
-#if 0
-
-	if(argc <= optind) {
-		usage(progname);
-	}
-
-#endif
 
 	sigact.sa_handler = rtl_sighandler;
 	sigemptyset(&sigact.sa_mask);

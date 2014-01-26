@@ -52,17 +52,15 @@
 
 #define PRG_VERSION "1.1" // see ChangeLog for history
 
-#define HERMES_FW_VER 24    //2.4
+#define HERMES_FW_VER 25    //2.5
 #define PORT 1024
-#define REVEAL_SEND_PORT PORT
-#define DATA_PORT PORT
 #define MAX_BUFFER_LEN 2048
 #define HPSDR_FRAME_LEN 1032
 #define IQ_FRAME_DATA_LEN 63
 #define DOWNSAMPLE_192 8    // downsample value used to get 192khz
 #define RTL_SAMPLE_RATE (192000 * DOWNSAMPLE_192)
 #define RTL_READ_COUNT (2048 * DOWNSAMPLE_192)
-#define MAX_RCVRS 7     // current limit imposed by cuSDR64
+#define MAX_RCVRS 8     // cuSDR64 limits this to 7
 #define IQ_FRAME_DATA_LEN 63
 #define MAXSTR 64
 
