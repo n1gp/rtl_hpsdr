@@ -50,7 +50,7 @@
 #include <xmmintrin.h>
 #endif
 
-#define PRG_VERSION "1.2" // see ChangeLog for history
+#define PRG_VERSION "1.3" // see ChangeLog for history
 
 #define HERMES_FW_VER 25    //2.5
 #define PORT 1024
