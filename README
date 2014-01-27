@@ -80,7 +80,7 @@ $ ./rtl_hpsdr -h
   the client program. Probably due to improper network settings
   in the reveal and discovery socket layers or perhaps its not
   possible to connect from the same client port to the same
-  server (address and port).
+  server (address and port). [ FIXED in version 1.3 ]
 
 - Periodically the Alsa local sound skips and is caused by xruns.
   Possibly due to improper period and buffer settings.

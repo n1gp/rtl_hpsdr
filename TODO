@@ -3,7 +3,7 @@ Add support to build and run this on Windows.
 Fix / add the ability to run this server locally on the
 same PC that runs the HPSDR client program. Not sure
 if its possible to connect from the same client port to
-the same server (address and port).
+the same server (address and port). [ FIXED in version 1.3 ]
 
 The Alsa local sound routines may need some work. Every now
 and then the audio skips and is caused by xruns.

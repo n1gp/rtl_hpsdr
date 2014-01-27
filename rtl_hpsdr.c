@@ -114,8 +114,8 @@ void
 hpsdrsim_reveal(void) {
 	int rc, bytes_read;
 	int i, on = 1;
-	u_char init_buffer[18] =
-	{ 0xEF, 0xFE, 2 + running, 0, 0, 0, 0, 0, 0, HERMES_FW_VER,
+	u_char init_buffer[19] =
+	{ 0xEF, 0xFE, 2 + running, 0, 0, 0, 0, 0, 0, HERMES_FW_VER, 1,
 	  'R', 'T', 'L', '_', 'N', '1', 'G', 'P' }; // special ID for SkimSrv
 	char s_ip[16];
 	bool ready = false;
@@ -207,7 +207,11 @@ hpsdrsim_reveal(void) {
 				buffer[i] = init_buffer[i];
 			}
 
-			for(i = sizeof(init_buffer); i < 60; i++) {
+			// the 49 trailing bytes are undefined, HermesIntf.dll
+			// will use the RTL_N1GP emulation ID and the dongle count
+			buffer[sizeof(init_buffer)] = mcb.total_num_rcvrs;
+
+			for(i = sizeof(init_buffer) + 1; i < 60; i++) {
 				buffer[i] = 1;
 			}
 
@@ -447,8 +451,9 @@ hpsdrsim_thread(void* arg) {
 							// squelch minor (scrolling) freq changes to reduce print output
 							ftime(&mcb.freq_ttime[j]);
 
-							if(((((mcb.freq_ttime[j].time * 1000) + mcb.freq_ttime[j].millitm) -
-							     (mcb.freq_ltime[j].time * 1000) + mcb.freq_ltime[j].millitm)) > 2000) {
+							if((((((mcb.freq_ttime[j].time * 1000) + mcb.freq_ttime[j].millitm) -
+										(mcb.freq_ltime[j].time * 1000) + mcb.freq_ltime[j].millitm)) > 2000)
+										|| (hpsdr_sequence < 5000)) {
 								if(common_freq)
 									printf("Received common freq(%d) %d hz, with offset %d hz, for all rcvrs\n",
 									       j + 1, freq, freq + mcb.freq_offset[j]);
@@ -518,14 +523,14 @@ hpsdrsim_thread(void* arg) {
 								hpsdrsim_stop_threads();
 								exit(-1);
 							} else if(num_rcvrs > 1) {
-								if(num_rcvrs <= mcb.total_num_rcvrs)
+								if(num_rcvrs <= mcb.total_num_rcvrs) {
 									num_copy_rcvrs = 0;
-								else
-									num_copy_rcvrs =
-									  num_rcvrs - mcb.total_num_rcvrs;
-
-								mcb.active_num_rcvrs = (num_copy_rcvrs > 0)
-					        ? mcb.total_num_rcvrs : mcb.active_num_rcvrs + (num_rcvrs - 1);
+									mcb.active_num_rcvrs = num_rcvrs;
+								}
+								else {
+									num_copy_rcvrs = num_rcvrs - mcb.total_num_rcvrs;
+									mcb.active_num_rcvrs = mcb.total_num_rcvrs;
+								}
 
 								mcb.nsamps_packet = nsamps_packet[mcb.active_num_rcvrs - 1];
 								mcb.frame_offset1 = frame_offset1[mcb.active_num_rcvrs - 1];
@@ -958,7 +963,7 @@ main(int argc, char* argv[]) {
 		memset(&mcb.freq_ltime[i], 0, sizeof(mcb.freq_ltime[i]));
 	}
 
-	while(loop && ((opt = getopt(argc, argv, "c:a:d:f:g:hm:n:o:r:s:v")) != -1)) {
+	while(loop && ((opt = getopt(argc, argv, "c:a:d:f:g:hl:m:n:o:r:s:v")) != -1)) {
 		switch(opt) {
 		case 'a':
 			r = set_option(mcb.agc_mode, optarg);
