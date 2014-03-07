@@ -1,3 +1,6 @@
+*** UPDATE: use github n1gp/librtlsdr instead as it supports both	***
+*** Linux and Windows builds and will be used for future updates	***
+
 rtl_hpsdr is an RTL to HPSDR software translation server.
 
 It currently builds and runs on Linux. It identifies and uses up to
@@ -103,4 +106,6 @@ Olli Parviainen and his application SoundTouch where I got idea's
 on optimizing the downsampling filter routines using SIMD
 instructions, http://www.surina.net/soundtouch
 
+#RTL devices on USB hub to get full power
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="2838", ATTR{bConfigurationValue}!="1", ATTR{bConfigurationValue}="1", RUN+="/bin/bash -c 'echo 1 > /sys/bus/usb/devices/%b/bConfigurationValue'"
 
