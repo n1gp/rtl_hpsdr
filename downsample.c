@@ -41,7 +41,7 @@ down_loop(struct rcvr_cb* rcb, int pass) {
 	float* buf, *out;
 	float* pSrc, *orig_buf;
 	const vector_type* pFil;
-	vector_type sum1;//, sum2;
+	vector_type sum1, sum2;
 	struct main_cb* mcb = rcb->mcb;
 
 	if(1 == pass) {
